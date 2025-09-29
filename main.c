@@ -19,16 +19,17 @@ void forceBlack(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int 
     binary_image[x][y] = 0; 
 }
 
-// Get pixel colour.
+// Get the colour of the binary image at pixel x, y.
 int getColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
     // Return 1 if pixel is white and 0 if the pixel is black.
     return binary_image[x][y];
 }
 
+// Get the colour of the RGB image at pixel x, y.
 int getColourRGB(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
     // Return 1 if pixel is white and 0 if the pixel is black.
     int sum = input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2];
-    return sum > 382;
+    return sum > 270;
 }
 
 // Switch colour of pixel (x,y) between black and white.
@@ -67,6 +68,21 @@ void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned ch
     }
   }
 }
+
+
+void erode;
+
+
+
+
+
+
+void detect;
+
+
+
+
+
 
 // Declare the arrays to store the RGB images.
 unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
