@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include "cbmp.c"
 
+#define testsize 12
+
 // Force pixel (x,y) to be white.
 void forceWhite(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
     binary_image[x][y] = 1;
@@ -160,10 +162,90 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
 
 
 
-// void detect;
+void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]){
+    unsigned char testsquare [testsize][testsize];
+    for(int i = 0; i < 950-testsize; i++){
+        for (int j = 0; j < 950-testsize; j++){
+            for (int h = 0; h < testsize; h++){
+                for (int w = 0; w < testsize; w++){
+                    testsquare [h][w] = binary_image[i+h][j+w];
+                }
+            }
+            if (test(testsquare)){
+                if (exclusion(binary_image, i, j)){
+                    found_spots[i][j]=1;
+                    for (int h = 0; h < testsize; h++){
+                        for (int w = 0; w < testsize; w++){
+                            binary_image[i+h][j+w] = 0;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
+int test(unsigned char testsquare[testsize][testsize]){
+    for (int h = 0; h < testsize; h++){
+        for (int w = 0; w < testsize; w++){
+            if (testsquare[h][w]){
+                return 1;
+            }     
+        }
+    }
+    return 0;
+}
 
-
+int exclusion(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], int i, int j){
+    if(i){
+        for(int w = 0; w < testsize; w++){
+            if (binary_image[i-1][j+w]){
+                return 0;
+            }
+        }
+    }
+    if(i!=(BMP_WIDTH-testsize-1)){
+        for(int w = 0; w < testsize; w++){
+            if (binary_image[i+1][j+w]){
+                return 0;
+            }
+        }
+    }
+    if (j){
+        for(int h = 0; h < testsize; h++){
+            if (binary_image[i+h][j-1]){
+                return 0;
+            }
+        }
+    }
+    if(j!=(BMP_HEIGTH-testsize-1)){
+        for(int h = 0; h < testsize; h++){
+            if (binary_image[i+h][j+1]){
+                return 0;
+            }
+        }
+    }
+    if (i&&j){
+        if (binary_image[i-1][j-1]){
+                return 0;
+            }
+    }
+    if (i&&j!=(BMP_HEIGTH-testsize-1)){
+        if (binary_image[i-1][j+1]){
+                return 0;
+            }
+    }
+    if (i!=(BMP_WIDTH-testsize-1)&&j){
+        if (binary_image[i-1][j-1]){
+                return 0;
+            }
+    }
+    if (i!=(BMP_WIDTH-testsize-1)&&j!=(BMP_HEIGTH-testsize-1)){
+        if (binary_image[i-1][j+1]){
+                return 0;
+            }
+    }
+}
 
 
 
@@ -173,7 +255,7 @@ unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 
 // Declare the array to store the binary images.
 unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH];
-
+unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize];
 
 // Main function.
 int main(int argc, char** argv)
@@ -203,8 +285,9 @@ int main(int argc, char** argv)
     write_bitmap(output_image, argv[2]);
 
     // erode image
-    //erode(binary_image);
+    erode(binary_image);
 
+    detect(binary_image, found_spots);
     //binaryToRGB(binary_image, output_image);
 
     // Save image to file
