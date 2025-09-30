@@ -72,9 +72,10 @@ void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned ch
     }
 }
 
+char erosionStep = 0;
 
 // Apply the erosion algorithm to the binary image using a structuring element.
-void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], char wasEroded) {
+void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], char wasEroded) {
 
     // Define a 3x3 structuring element (cross shape for cell detection).
     // 1 means the pixel is part of the structuring element, 0 means it's ignored.
@@ -172,6 +173,16 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], char wasEroded) {
             }
         }
     }
+
+    // Save the eroded image.
+    // Create output image
+    //binaryToRGB(binary_image, bmp_image);
+
+    // Save image to file
+    //char filename[32];
+    //sprintf(filename, "results/step_%d.bmp", erosionStep);
+    //write_bitmap(bmp_image, filename);
+    //erosionStep ++;
 }
 
 
@@ -269,7 +280,7 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
 void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {
 
     // Define the offset from the values in found_spots to the actual positions in the output image.
-    char offset = testsize;
+    char offset = testsize / 2;
 
     // Check through all values in found_spots and.
     for (int x = 0; x < BMP_WIDTH-testsize; x++) {
@@ -277,9 +288,14 @@ void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANN
 
             // Draw the + sign for found spots.
             if (found_spots[x][y]) {
-                bmp_image[x + offset][y + offset][0] = 255;
-                bmp_image[x + offset][y + offset][1] = 0;
-                bmp_image[x + offset][y + offset][2] = 0;
+                for (int i = -6; i < 6; i++) {
+                    for (int j = -6; j < 6; j++) {
+                        bmp_image[x + offset + i][y + offset + j][0] = 255;
+                        bmp_image[x + offset + i][y + offset + j][1] = 0;
+                        bmp_image[x + offset + i][y + offset + j][2] = 0;
+                    }
+                }
+                
                 printf("Cell written at position (%d, %d)\n", x + offset, y + offset);
             }
         }
@@ -354,7 +370,7 @@ int main(int argc, char** argv) {
             }
         }
         
-        erode(binary_image, wasEroded);
+        erode(binary_image, bmp_image, wasEroded);
         erosion_iterations++;
         
         // Check if erosion actually changed anything
@@ -381,7 +397,7 @@ int main(int argc, char** argv) {
                erosion_iterations, white_pixels, wasEroded);
         
         // Stop if no white pixels remain or max erosions reached
-        if (white_pixels == 0 || erosion_iterations >= max_erosions) {
+        if (white_pixels == 0 || erosion_iterations > max_erosions) {
             break;
         }
         
