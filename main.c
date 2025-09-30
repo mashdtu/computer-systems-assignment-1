@@ -36,9 +36,9 @@ int getColourRGB(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS],
 void switchColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
     // Switch between black and white based on current pixel.
     if (getColour(binary_image, x, y)) {
-        forceBlack(binary_image, x, y);
+        binary_image[x][y] = 0;
     } else {
-        forceWhite(binary_image, x, y);
+        binary_image[x][y] = 1;
     }
 }
 
@@ -59,14 +59,14 @@ void rgbToBinary (unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]
 
 // Write an RGB bitmap input_image from the 2D list binary_image.
 // Note that this image will neccisarily be polarised, any pixel will be either completely black or completely white.
-void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]){
-  for (int x = 0; x < BMP_WIDTH; x++) {
-    for (int y = 0; y < BMP_HEIGTH; y++) {
-      for (int c = 0; c < BMP_CHANNELS; c++) {
-        output_image[x][y][c] = binary_image[x][y] * 255;
-      }
+void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGTH; y++) {
+            for (int c = 0; c < BMP_CHANNELS; c++) {
+                output_image[x][y][c] = binary_image[x][y] * 255;
+            }
+        }
     }
-  }
 }
 
 
@@ -153,6 +153,9 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
             binary_image[BMP_WIDTH - 1 - i][y] = 0;  // Right border
         }
     }
+
+    // Check if the eroded image is identical to the binary image. Set the boolean value wasEroded to false if they are identical.
+    wasEroded = (temp_image == binary_image) ? 0 : 1;
 }
 
 
@@ -174,10 +177,12 @@ unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 // Declare the array to store the binary images.
 unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH];
 
+// Declare boolean for whether eroding the image caused any change.
+char wasEroded;
+
 
 // Main function.
-int main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
     //argc counts how may arguments are passed
     //argv[0] is a string with the name of the program
     //argv[1] is the first command line argument (input image)
