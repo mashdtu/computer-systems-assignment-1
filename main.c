@@ -1,4 +1,4 @@
-// To compile (linux/mac): gcc cbmp.c main.c -o main.out -std=c99
+// To compile (linux/mac): gcc main.c -o main.out -std=c99
 // To run (linux/mac): ./main.out example.bmp example_gray.bmp
 
 // To compile (win): gcc cbmp.c main.c -o main.exe -std=c99
