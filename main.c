@@ -156,8 +156,21 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
         }
     }
 
-    // Check if the eroded image is identical to the binary image. Set the boolean value wasEroded to false if they are identical.
-    wasEroded = (temp_image == binary_image) ? 0 : 1;
+    // Check if the eroded image is identical to the original image by comparing pixel values
+
+    // Assume no erosion occurred.
+    wasEroded = 0;
+
+    // Check for each pixel.
+    for (int x = 0; x < BMP_WIDTH && !wasEroded; x++) {
+        for (int y = 0; y < BMP_HEIGTH && !wasEroded; y++) {
+
+            // If any pixels are different the set wasEroded to true.
+            if (temp_image[x][y] != binary_image[x][y]) {
+                wasEroded = 1;
+            }
+        }
+    }
 }
 
 
@@ -292,9 +305,11 @@ int main(int argc, char** argv) {
     write_bitmap(output_image, argv[2]);
 
     // erode image
-    erode(binary_image);
+    do {
+        erode(binary_image);
+        detect(binary_image, found_spots);
+    } while (wasEroded);
 
-    detect(binary_image, found_spots);
     //binaryToRGB(binary_image, output_image);
 
     // Save image to file
