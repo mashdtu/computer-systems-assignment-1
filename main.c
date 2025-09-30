@@ -258,7 +258,12 @@ unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 
 // Declare the array to store the binary images.
 unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH];
+
+// Declare list of found spots
 unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize];
+
+// Declare boolean used to check erosion.
+char wasEroded;
 
 // Main function.
 int main(int argc, char** argv) {
