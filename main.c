@@ -28,9 +28,9 @@ int getColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x,
 }
 
 // Get the colour of the RGB image at pixel x, y.
-int getColourRGB(unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
+int getColourRGB(unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
     // Return 1 if pixel is white and 0 if the pixel is black.
-    int sum = input_image[x][y][0] + input_image[x][y][1] + input_image[x][y][2];
+    int sum = bmp_image[x][y][0] + bmp_image[x][y][1] + bmp_image[x][y][2];
     return sum > 270;
 }
 
@@ -45,11 +45,11 @@ void switchColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned in
 }
 
 
-// Write a 2D list binary_image from the RGB bitmap input_image.
-void rgbToBinary (unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
+// Write a 2D list binary_image from the RGB bitmap bmp_image.
+void rgbToBinary (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
     for (int x = 0; x < BMP_WIDTH; x++) {
         for (int y = 0; y < BMP_HEIGTH; y++) {
-            if (getColourRGB(input_image, x, y)) {
+            if (getColourRGB(bmp_image, x, y)) {
                 forceWhite(binary_image, x, y);
             } else {
                 forceBlack(binary_image, x, y);
@@ -59,13 +59,13 @@ void rgbToBinary (unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]
 }
 
 
-// Write an RGB bitmap input_image from the 2D list binary_image.
+// Write an RGB bitmap bmp_image from the 2D list binary_image.
 // Note that this image will neccisarily be polarised, any pixel will be either completely black or completely white.
-void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
     for (int x = 0; x < BMP_WIDTH; x++) {
         for (int y = 0; y < BMP_HEIGTH; y++) {
             for (int c = 0; c < BMP_CHANNELS; c++) {
-                output_image[x][y][c] = binary_image[x][y] * 255;
+                bmp_image[x][y][c] = binary_image[x][y] * 255;
             }
         }
     }
@@ -73,7 +73,7 @@ void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned ch
 
 
 // Apply the erosion algorithm to the binary image using a structuring element.
-void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
+void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], char wasEroded) {
 
     // Define a 3x3 structuring element (cross shape for cell detection).
     // 1 means the pixel is part of the structuring element, 0 means it's ignored.
@@ -175,32 +175,6 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
 
 
 
-
-
-
-void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]){
-    unsigned char testsquare [testsize][testsize];
-    for(int i = 0; i < 950-testsize; i++){
-        for (int j = 0; j < 950-testsize; j++){
-            for (int h = 0; h < testsize; h++){
-                for (int w = 0; w < testsize; w++){
-                    testsquare [h][w] = binary_image[i+h][j+w];
-                }
-            }
-            if (test(testsquare)){
-                if (exclusion(binary_image, i, j)){
-                    found_spots[i][j]=1;
-                    for (int h = 0; h < testsize; h++){
-                        for (int w = 0; w < testsize; w++){
-                            binary_image[i+h][j+w] = 0;
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 int test(unsigned char testsquare[testsize][testsize]){
     for (int h = 0; h < testsize; h++){
         for (int w = 0; w < testsize; w++){
@@ -261,13 +235,61 @@ int exclusion(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], int i, int j){
                 return 0;
             }
     }
+    return 1;
 }
 
 
 
-// Declare the arrays to store the RGB images.
-unsigned char input_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-unsigned char output_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]){
+    unsigned char testsquare [testsize][testsize];
+    for(int i = 0; i < 950-testsize; i++){
+        for (int j = 0; j < 950-testsize; j++){
+            for (int h = 0; h < testsize; h++){
+                for (int w = 0; w < testsize; w++){
+                    testsquare [h][w] = binary_image[i+h][j+w];
+                }
+            }
+            if (test(testsquare)){
+                printf("Cell found at position (%d, %d)\n", i, j);
+                if (exclusion(binary_image, i, j)){
+                    found_spots[i][j]=1;
+                    for (int h = 0; h < testsize && (i+h) < BMP_WIDTH; h++){
+                        for (int w = 0; w < testsize && (j+w) < BMP_HEIGTH; w++){
+                            forceBlack(binary_image, i+h, j+w);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// Function to create the output image with red + signs over each cell.
+void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {
+
+    // Define the offset from the values in found_spots to the actual positions in the output image.
+    char offset = testsize;
+
+    // Check through all values in found_spots and.
+    for (int x = 0; x < BMP_WIDTH-testsize; x++) {
+        for (int y = 0; y < BMP_HEIGTH-testsize; y++) {
+
+            // Draw the + sign for found spots.
+            if (found_spots[x][y]) {
+                bmp_image[x + offset][y + offset][0] = 255;
+                bmp_image[x + offset][y + offset][1] = 0;
+                bmp_image[x + offset][y + offset][2] = 0;
+                printf("Cell written at position (%d, %d)\n", x + offset, y + offset);
+            }
+        }
+    }
+}
+
+
+
+// Declare the array to store the RGB image.
+unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 
 // Declare the array to store the binary images.
 unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH];
@@ -286,7 +308,7 @@ int main(int argc, char** argv) {
     //argv[2] is the second command line argument (output image)
 
     //Checking that 2 arguments are passed
-    if (argc != 4) {
+    if (argc != 3) {
         fprintf(stderr, "Usage: %s <output file path> <output file path>\n", argv[0]);
         exit(1);
     }
@@ -294,26 +316,33 @@ int main(int argc, char** argv) {
     printf("Example program - 02132 - A1\n");
 
     // Load image from file.
-    read_bitmap(argv[1], input_image);
+    read_bitmap(argv[1], bmp_image);
 
     // Write the binary image.
-    rgbToBinary(input_image, binary_image);
-
-    binaryToRGB(binary_image, output_image);
-
-    // Save image to file
-    write_bitmap(output_image, argv[2]);
+    rgbToBinary(bmp_image, binary_image);
 
     // erode image
     do {
-        erode(binary_image);
-        detect(binary_image, found_spots);
+        erode(binary_image, wasEroded);
+        detect(binary_image, bmp_image, found_spots);
     } while (wasEroded);
 
-    //binaryToRGB(binary_image, output_image);
+    // Create output image
+    createOutputImage(bmp_image, found_spots);
 
     // Save image to file
-    //write_bitmap(output_image, argv[3]);
+    write_bitmap(bmp_image, argv[2]);
+
+    // Count and display total number of cells found
+    int total_cells = 0;
+    for (int x = 0; x < BMP_WIDTH-testsize; x++) {
+        for (int y = 0; y < BMP_HEIGTH-testsize; y++) {
+            if (found_spots[x][y]) {
+                total_cells++;
+            }
+        }
+    }
+    printf("Total cells detected: %d\n", total_cells);
 
     printf("Done!\n");
     return 0;
