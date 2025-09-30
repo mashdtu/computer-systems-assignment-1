@@ -189,28 +189,9 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
 
 // Detect cells in the binary image using sliding window approach
 void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {    
-    printf("Starting detection with testsize=%d...\n", testsize);
-    
-    // Count white pixels before detection
-    int white_pixels_before = 0;
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
-            if (binary_image[x][y] == 1) {
-                white_pixels_before++;
-            }
-        }
-    }
-    printf("White pixels available for detection: %d\n", white_pixels_before);
-    
-    // Analyze all pixels of the image one by one using a capturing area
-    // The capturing area is a 12x12 pixel square surrounded by a 1-pixel exclusion frame
-    int areas_checked = 0;
-    int areas_with_white = 0;
-    int cells_detected = 0;
     
     for (int x = 1; x < BMP_WIDTH - testsize - 1; x++) {
         for (int y = 1; y < BMP_HEIGTH - testsize - 1; y++) {
-            areas_checked++;
             
             // Check if at least one pixel is white in the capturing area (12x12 square)
             int has_white_pixel = 0;
@@ -226,7 +207,6 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
             
             // If at least one pixel is white in the capturing area
             if (has_white_pixel) {
-                areas_with_white++;
                 
                 // Check if all pixels in the exclusion frame are black
                 int exclusion_frame_clear = 1;
@@ -256,7 +236,6 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
                 // If all pixels in the exclusion frame are black, register a cell detection
                 if (exclusion_frame_clear) {
                     found_spots[x - 1][y - 1] = 1;  // Adjust for the exclusion frame offset
-                    cells_detected++;
                     
                     // Set all pixels inside the capturing area to black to prevent detecting the same cell twice
                     for (int dx = 0; dx < testsize; dx++) {
@@ -270,9 +249,6 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
             }
         }
     }
-    
-    printf("Detection summary: %d areas checked, %d with white pixels, %d cells detected\n", 
-           areas_checked, areas_with_white, cells_detected);
 }
 
 
