@@ -176,93 +176,92 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], char wasEroded) {
 
 
 
-int test(unsigned char testsquare[testsize][testsize]){
-    for (int h = 0; h < testsize; h++){
-        for (int w = 0; w < testsize; w++){
-            if (testsquare[h][w]){
-                return 1;
-            }     
-        }
-    }
-    return 0;
-}
-
-int exclusion(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], int i, int j){
-    if(i){
-        for(int w = 0; w < testsize; w++){
-            if (binary_image[i-1][j+w]){
-                return 0;
+// Detect cells in the binary image using sliding window approach
+void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {    
+    printf("Starting detection with testsize=%d...\n", testsize);
+    
+    // Count white pixels before detection
+    int white_pixels_before = 0;
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGTH; y++) {
+            if (binary_image[x][y] == 1) {
+                white_pixels_before++;
             }
         }
     }
-    if(i!=(BMP_WIDTH-testsize-1)){
-        for(int w = 0; w < testsize; w++){
-            if (binary_image[i+1][j+w]){
-                return 0;
-            }
-        }
-    }
-    if (j){
-        for(int h = 0; h < testsize; h++){
-            if (binary_image[i+h][j-1]){
-                return 0;
-            }
-        }
-    }
-    if(j!=(BMP_HEIGTH-testsize-1)){
-        for(int h = 0; h < testsize; h++){
-            if (binary_image[i+h][j+1]){
-                return 0;
-            }
-        }
-    }
-    if (i&&j){
-        if (binary_image[i-1][j-1]){
-                return 0;
-            }
-    }
-    if (i&&j!=(BMP_HEIGTH-testsize-1)){
-        if (binary_image[i-1][j+1]){
-                return 0;
-            }
-    }
-    if (i!=(BMP_WIDTH-testsize-1)&&j){
-        if (binary_image[i-1][j-1]){
-                return 0;
-            }
-    }
-    if (i!=(BMP_WIDTH-testsize-1)&&j!=(BMP_HEIGTH-testsize-1)){
-        if (binary_image[i-1][j+1]){
-                return 0;
-            }
-    }
-    return 1;
-}
-
-
-
-void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]){
-    unsigned char testsquare [testsize][testsize];
-    for(int i = 0; i < 950-testsize; i++){
-        for (int j = 0; j < 950-testsize; j++){
-            for (int h = 0; h < testsize; h++){
-                for (int w = 0; w < testsize; w++){
-                    testsquare [h][w] = binary_image[i+h][j+w];
+    printf("White pixels available for detection: %d\n", white_pixels_before);
+    
+    // Analyze all pixels of the image one by one using a capturing area
+    // The capturing area is a 12x12 pixel square surrounded by a 1-pixel exclusion frame
+    int areas_checked = 0;
+    int areas_with_white = 0;
+    int cells_detected = 0;
+    
+    for (int x = 1; x < BMP_WIDTH - testsize - 1; x++) {
+        for (int y = 1; y < BMP_HEIGTH - testsize - 1; y++) {
+            areas_checked++;
+            
+            // Check if at least one pixel is white in the capturing area (12x12 square)
+            int has_white_pixel = 0;
+            for (int dx = 0; dx < testsize; dx++) {
+                for (int dy = 0; dy < testsize; dy++) {
+                    if (binary_image[x + dx][y + dy] == 1) {
+                        has_white_pixel = 1;
+                        break;
+                    }
                 }
+                if (has_white_pixel) break;
             }
-            if (test(testsquare)){
-                printf("Cell found at position (%d, %d)\n", i, j);
-                if (exclusion(binary_image, i, j)){
-                    found_spots[i][j]=1;
-                    for (int h = 0; h < testsize && (i+h) < BMP_WIDTH; h++){
-                        for (int w = 0; w < testsize && (j+w) < BMP_HEIGTH; w++){
-                            forceBlack(binary_image, i+h, j+w);
+            
+            // If at least one pixel is white in the capturing area
+            if (has_white_pixel) {
+                areas_with_white++;
+                
+                // Check if all pixels in the exclusion frame are black
+                int exclusion_frame_clear = 1;
+                
+                // Check top and bottom rows of exclusion frame
+                for (int dy = -1; dy <= testsize; dy++) {
+                    if (y + dy >= 0 && y + dy < BMP_HEIGTH) {
+                        if (binary_image[x - 1][y + dy] == 1 || binary_image[x + testsize][y + dy] == 1) {
+                            exclusion_frame_clear = 0;
+                            break;
                         }
                     }
                 }
+                
+                // Check left and right columns of exclusion frame (excluding corners already checked)
+                if (exclusion_frame_clear) {
+                    for (int dx = 0; dx < testsize; dx++) {
+                        if (x + dx >= 0 && x + dx < BMP_WIDTH) {
+                            if (binary_image[x + dx][y - 1] == 1 || binary_image[x + dx][y + testsize] == 1) {
+                                exclusion_frame_clear = 0;
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                // If all pixels in the exclusion frame are black, register a cell detection
+                if (exclusion_frame_clear) {
+                    found_spots[x - 1][y - 1] = 1;  // Adjust for the exclusion frame offset
+                    cells_detected++;
+                    
+                    // Set all pixels inside the capturing area to black to prevent detecting the same cell twice
+                    for (int dx = 0; dx < testsize; dx++) {
+                        for (int dy = 0; dy < testsize; dy++) {
+                            binary_image[x + dx][y + dy] = 0;
+                        }
+                    }
+                    
+                    printf("Cell detected at position (%d, %d)\n", x, y);
+                }
             }
         }
     }
+    
+    printf("Detection summary: %d areas checked, %d with white pixels, %d cells detected\n", 
+           areas_checked, areas_with_white, cells_detected);
 }
 
 
@@ -317,16 +316,77 @@ int main(int argc, char** argv) {
 
     printf("Example program - 02132 - A1\n");
     start = clock();
+
+    // Initialize found_spots array to all zeros.
+    for (int x = 0; x < BMP_WIDTH - testsize; x++) {
+        for (int y = 0; y < BMP_HEIGTH - testsize; y++) {
+            found_spots[x][y] = 0;
+        }
+    }
+
     // Load image from file.
     read_bitmap(argv[1], bmp_image);
 
     // Write the binary image.
     rgbToBinary(bmp_image, binary_image);
 
-    // erode image
+    // Count initial white pixels
+    int initial_white_pixels = 0;
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGTH; y++) {
+            if (binary_image[x][y] == 1) {
+                initial_white_pixels++;
+            }
+        }
+    }
+    printf("Initial white pixels after binary conversion: %d\n", initial_white_pixels);
+    
+    // Apply limited erosion and detect cells
+    int erosion_iterations = 0;
+    int max_erosions = 10; // Limit erosions to prevent removing all pixels
+    
     do {
+        // Create a copy to check if erosion changed anything
+        unsigned char temp_copy[BMP_WIDTH][BMP_HEIGTH];
+        for (int x = 0; x < BMP_WIDTH; x++) {
+            for (int y = 0; y < BMP_HEIGTH; y++) {
+                temp_copy[x][y] = binary_image[x][y];
+            }
+        }
+        
         erode(binary_image, wasEroded);
-        detect(binary_image, bmp_image, found_spots);
+        erosion_iterations++;
+        
+        // Check if erosion actually changed anything
+        wasEroded = 0;
+        for (int x = 0; x < BMP_WIDTH && !wasEroded; x++) {
+            for (int y = 0; y < BMP_HEIGTH && !wasEroded; y++) {
+                if (temp_copy[x][y] != binary_image[x][y]) {
+                    wasEroded = 1;
+                }
+            }
+        }
+        
+        // Count remaining white pixels
+        int white_pixels = 0;
+        for (int x = 0; x < BMP_WIDTH; x++) {
+            for (int y = 0; y < BMP_HEIGTH; y++) {
+                if (binary_image[x][y] == 1) {
+                    white_pixels++;
+                }
+            }
+        }
+        
+        printf("After erosion %d: %d white pixels remaining, wasEroded=%d\n", 
+               erosion_iterations, white_pixels, wasEroded);
+        
+        // Stop if no white pixels remain or max erosions reached
+        if (white_pixels == 0 || erosion_iterations >= max_erosions) {
+            break;
+        }
+        
+        detect(binary_image, found_spots);
+        
     } while (wasEroded);
 
     // Create output image
