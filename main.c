@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "cbmp.c"
+#include <time.h>
 
 #define testsize 12
 
@@ -271,7 +272,8 @@ int main(int argc, char** argv) {
     //argv[0] is a string with the name of the program
     //argv[1] is the first command line argument (input image)
     //argv[2] is the second command line argument (output image)
-
+    clock_t start, end;
+    double cpu_time_used;
     //Checking that 2 arguments are passed
     if (argc != 4) {
         fprintf(stderr, "Usage: %s <output file path> <output file path>\n", argv[0]);
@@ -279,7 +281,7 @@ int main(int argc, char** argv) {
     }
 
     printf("Example program - 02132 - A1\n");
-
+    start = clock();
     // Load image from file.
     read_bitmap(argv[1], input_image);
 
@@ -300,6 +302,10 @@ int main(int argc, char** argv) {
     // Save image to file
     //write_bitmap(output_image, argv[3]);
 
+    end = clock();
+
     printf("Done!\n");
+    cpu_time_used = end - start;
+    printf("Total time: %f ms\n", cpu_time_used * 1000.0 /CLOCKS_PER_SEC);
     return 0;
 }
