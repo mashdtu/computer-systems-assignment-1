@@ -1,5 +1,5 @@
 // To compile (linux/mac): gcc main.c -o main.out -std=c99
-// To run (linux/mac): ./main.out example.bmp example_gray.bmp
+// To run (linux/mac): ./main.out "samples/easy/10EASY.bmp" "results/easy/10EASY_RESULT.bmp"
 
 // To compile (win): gcc cbmp.c main.c -o main.exe -std=c99
 // gcc main.c -o main.exe
@@ -88,9 +88,9 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
 
     // Define the structuring element itself.
     int structuringElement[3][3] = {
-        {0, 1, 0},
+        {1, 1, 0},
         {1, 1, 1},
-        {0, 1, 0}
+        {1, 1, 0}
     };
     
     // Create a temporary array to store the result.
@@ -403,5 +403,6 @@ int main(int argc, char** argv) {
     printf("Done!\n");
     cpu_time_used = end - start;
     printf("Total time: %f ms\n", cpu_time_used * 1000.0 /CLOCKS_PER_SEC);
+
     return 0;
 }
