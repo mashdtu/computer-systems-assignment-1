@@ -174,11 +174,11 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
         }
     }
 
-    // Save the eroded image.
-    // Create output image
+    //// Save the eroded image.
+    //// Create output image
     //binaryToRGB(binary_image, bmp_image);
-
-    // Save image to file
+    //
+    //// Save image to file
     //char filename[32];
     //sprintf(filename, "results/step_%d.bmp", erosionStep);
     //write_bitmap(bmp_image, filename);
