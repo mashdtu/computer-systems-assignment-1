@@ -77,9 +77,9 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
 
     // Define the structuring element itself.
     int structuringElement[3][3] = {
-        {1, 1, 0},
+        {0, 1, 0},
         {1, 1, 1},
-        {1, 1, 0}
+        {0, 1, 0}
     };
     
     // Create a temporary array to store the result.
@@ -95,8 +95,8 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
     printf("Starting erosion with cross-shaped structuring element...\n");
 
     // Apply the erosion algorithm for non-border pixels
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
+    for (int x = 1; x < BMP_WIDTH - 1; x++) {
+        for (int y = 1; y < BMP_HEIGTH - 1; y++) {
 
 
             int erosion_result = 0;
@@ -119,8 +119,8 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
                             
 
                             // Calculate the position of the selected entry of the structuring element relative to the selected pixel.
-                            int entry_x = x + i;
-                            int entry_y = y + j;
+                            int entry_x = x + i - 1;
+                            int entry_y = y + j - 1;
                             
                             // If any black pixel is contain on an entry of the structuring element equal to 1, the erosion fails.
                             if (temp_image[entry_x][entry_y] == 0) {
@@ -128,8 +128,7 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
                             }
                         }
                     }
-                }
-                
+                }             
             }
 
             // Set the pixel to the result of the erosion, i.e. if the erosion failed (0), then set the pixel to 0 (black). If it succeeded set it to 1 (white).
@@ -227,7 +226,7 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
 void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {
 
     // Define the offset from the values in found_spots to the actual positions in the output image.
-    char offset = testsize;
+    char offset = testsize / 2;
 
     // Check through all values in found_spots and.
     for (int x = 0; x < BMP_WIDTH-testsize; x++) {
