@@ -11,38 +11,19 @@
 #include <time.h>
 
 #define testsize 12
-
-// Force pixel (x,y) to be white.
-void forceWhite(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
-    binary_image[x][y] = 1;
-}
-
-// Force pixel (x,y) to be black.
-void forceBlack(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
-    binary_image[x][y] = 0; 
-}
-
-// Get the colour of the binary image at pixel x, y.
-int getColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
-    // Return 1 if pixel is white and 0 if the pixel is black.
-    return binary_image[x][y];
-}
+#define BINARY_COLOUR_THRESHOLD 270
 
 // Get the colour of the RGB image at pixel x, y.
 int getColourRGB(unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
     // Return 1 if pixel is white and 0 if the pixel is black.
     int sum = bmp_image[x][y][0] + bmp_image[x][y][1] + bmp_image[x][y][2];
-    return sum > 270;
+    return sum > BINARY_COLOUR_THRESHOLD;
 }
 
 // Switch colour of pixel (x,y) between black and white.
 void switchColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
-    // Switch between black and white based on current pixel.
-    if (getColour(binary_image, x, y)) {
-        binary_image[x][y] = 0;
-    } else {
-        binary_image[x][y] = 1;
-    }
+    // Switch between black and white.
+    binary_image[x][y] = !(binary_image[x][y]);
 }
 
 
@@ -51,9 +32,9 @@ void rgbToBinary (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], 
     for (int x = 0; x < BMP_WIDTH; x++) {
         for (int y = 0; y < BMP_HEIGTH; y++) {
             if (getColourRGB(bmp_image, x, y)) {
-                forceWhite(binary_image, x, y);
+                binary_image[x][y] = 1;
             } else {
-                forceBlack(binary_image, x, y);
+                binary_image[x][y] = 0;
             }
         }
     }
@@ -72,10 +53,18 @@ void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned ch
     }
 }
 
-char erosionStep = 0;
+// Save a snapshot of the current binary image as a BMP under results/step_<step>.bmp
+void saveErosionStepImage(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], int step) {
+    static unsigned char tmp[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
+    binaryToRGB(binary_image, tmp);
+    char path[260];
+    snprintf(path, sizeof(path), "results/step_%d.bmp", step);
+    write_bitmap(tmp, path);
+    printf("Saved erosion snapshot: %s\n", path);
+}
 
 // Apply the erosion algorithm to the binary image using a structuring element.
-void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], char wasEroded) {
+void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
 
     // Define a 3x3 structuring element (cross shape for cell detection).
     // 1 means the pixel is part of the structuring element, 0 means it's ignored.
@@ -84,7 +73,7 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
     int se_size = 3;
 
     // Define center of the structuring element.
-    int se_center = se_size / 2; // Used for making sure the pixel is not at the border. Dividing integers automatically rounds down.
+    int se_center = 1; // Used for making sure the pixel is not at the border. Dividing integers automatically rounds down.
 
     // Define the structuring element itself.
     int structuringElement[3][3] = {
@@ -102,39 +91,47 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
             temp_image[x][y] = binary_image[x][y];
         }
     }
-    
+
+    printf("Starting erosion with cross-shaped structuring element...\n");
+
     // Apply the erosion algorithm for non-border pixels
-    for (int x = se_center; x < BMP_WIDTH - se_center; x++) {
-        for (int y = se_center; y < BMP_HEIGTH - se_center; y++) {
+    for (int x = 0; x < BMP_WIDTH; x++) {
+        for (int y = 0; y < BMP_HEIGTH; y++) {
+
+
+            int erosion_result = 0;
             
-            // Check if the selected pixel should be eroding by comparing the surrounding grid with the structuring element.
 
-            // Assume erosion passes initially, i.e. that there are no black pixels within the structuring element.
-            int erosion_result = 1;
+            if (temp_image[x][y]) {
+
+                // Assume erosion passes initially, i.e. that there are no black pixels within the structuring element.
+                erosion_result = 1;
             
-            // Check each position in the structuring element projected on the binary image.
-            for (int i = 0; i < se_size; i++) {
-                for (int j = 0; j < se_size; j++) {
+                // Check if the selected pixel should be eroding by comparing the surrounding grid with the structuring element.
+                
+                // Check each position in the structuring element projected on the binary image.
+                for (int i = 0; i < se_size; i++) {
+                    for (int j = 0; j < se_size; j++) {
 
-                    // Only check positions where the structuring element has a 1.
-                    if (structuringElement[i][j] == 1) {
+                        // Only check positions where the structuring element has a 1.
+                        if (structuringElement[i][j] == 1) {
 
-                        // Calculate the position of the selected entry of the structuring element relative to the selected pixel.
-                        int entry_x = x + (i - se_center);
-                        int entry_y = y + (j - se_center);
-                        
-                        // If any black pixel is contain on an entry of the structuring element equal to 1, the erosion fails.
-                        if (temp_image[entry_x][entry_y] == 0) {
-                            erosion_result = 0;
-                            break;
+                            
+
+                            // Calculate the position of the selected entry of the structuring element relative to the selected pixel.
+                            int entry_x = x + i;
+                            int entry_y = y + j;
+                            
+                            // If any black pixel is contain on an entry of the structuring element equal to 1, the erosion fails.
+                            if (temp_image[entry_x][entry_y] == 0) {
+                                erosion_result = 0;
+                            }
                         }
                     }
                 }
-
-                // Skip the loop if the erosion already fails.
-                if (erosion_result == 0) break;
+                
             }
-            
+
             // Set the pixel to the result of the erosion, i.e. if the erosion failed (0), then set the pixel to 0 (black). If it succeeded set it to 1 (white).
             binary_image[x][y] = erosion_result;
         }
@@ -157,32 +154,6 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
             binary_image[BMP_WIDTH - 1 - i][y] = 0;  // Right border
         }
     }
-
-    // Check if the eroded image is identical to the original image by comparing pixel values
-
-    // Assume no erosion occurred.
-    wasEroded = 0;
-
-    // Check for each pixel.
-    for (int x = 0; x < BMP_WIDTH && !wasEroded; x++) {
-        for (int y = 0; y < BMP_HEIGTH && !wasEroded; y++) {
-
-            // If any pixels are different the set wasEroded to true.
-            if (temp_image[x][y] != binary_image[x][y]) {
-                wasEroded = 1;
-            }
-        }
-    }
-
-    //// Save the eroded image.
-    //// Create output image
-    //binaryToRGB(binary_image, bmp_image);
-    //
-    //// Save image to file
-    //char filename[32];
-    //sprintf(filename, "results/step_%d.bmp", erosionStep);
-    //write_bitmap(bmp_image, filename);
-    //erosionStep ++;
 }
 
 
@@ -256,7 +227,7 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
 void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {
 
     // Define the offset from the values in found_spots to the actual positions in the output image.
-    char offset = testsize / 2;
+    char offset = testsize;
 
     // Check through all values in found_spots and.
     for (int x = 0; x < BMP_WIDTH-testsize; x++) {
@@ -280,7 +251,7 @@ void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANN
 
 
 
-// Declare the array to store the RGB image.
+//Declare the array to store the RGB image.
 unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 
 // Declare the array to store the binary images.
@@ -322,6 +293,9 @@ int main(int argc, char** argv) {
     // Write the binary image.
     rgbToBinary(bmp_image, binary_image);
 
+    // Save the initial binary image as step 0 (before any erosion)
+    saveErosionStepImage(binary_image, 0);
+
     // Count initial white pixels
     int initial_white_pixels = 0;
     for (int x = 0; x < BMP_WIDTH; x++) {
@@ -335,7 +309,7 @@ int main(int argc, char** argv) {
     
     // Apply limited erosion and detect cells
     int erosion_iterations = 0;
-    int max_erosions = 10; // Limit erosions to prevent removing all pixels
+    int max_erosions = 100; // Limit erosions to prevent removing all pixels
     
     do {
         // Create a copy to check if erosion changed anything
@@ -346,8 +320,11 @@ int main(int argc, char** argv) {
             }
         }
         
-        erode(binary_image, bmp_image, wasEroded);
-        erosion_iterations++;
+    erode(binary_image, bmp_image);
+    erosion_iterations++;
+
+    // Save snapshot after this erosion iteration
+    saveErosionStepImage(binary_image, erosion_iterations);
         
         // Check if erosion actually changed anything
         wasEroded = 0;
