@@ -1,5 +1,5 @@
 // To compile (linux/mac): gcc main.c -o main.out -std=c99
-// To run (linux/mac): ./main.out "samples/easy/10EASY.bmp" "results/easy/10EASY_RESULT.bmp"
+// To run (linux/mac): ./main.out "samples/easy/1EASY.bmp" "results/easy/1EASY_RESULT.bmp"
 
 // To compile (win): gcc cbmp.c main.c -o main.exe -std=c99
 // gcc main.c -o main.exe
