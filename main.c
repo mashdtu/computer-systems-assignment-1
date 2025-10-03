@@ -14,7 +14,7 @@
 #define BINARY_COLOUR_THRESHOLD 270
 
 // Get the colour of the RGB image at pixel x, y.
-int getColourRGB(unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
+int getColourIntensity(unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
     // Return 1 if pixel is white and 0 if the pixel is black.
     int sum = bmp_image[x][y][0] + bmp_image[x][y][1] + bmp_image[x][y][2];
     return sum > BINARY_COLOUR_THRESHOLD;
@@ -31,7 +31,7 @@ void switchColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned in
 void rgbToBinary (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
     for (int x = 0; x < BMP_WIDTH; x++) {
         for (int y = 0; y < BMP_HEIGTH; y++) {
-            if (getColourRGB(bmp_image, x, y)) {
+            if (getColourIntensity(bmp_image, x, y)) {
                 binary_image[x][y] = 1;
             } else {
                 binary_image[x][y] = 0;
