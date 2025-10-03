@@ -73,13 +73,13 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
     int se_size = 3;
 
     // Define center of the structuring element.
-    int se_center = 1; // Used for making sure the pixel is not at the border. Dividing integers automatically rounds down.
+    int se_center = se_size>>1; // Used for making sure the pixel is not at the border. Dividing integers automatically rounds down.
 
     // Define the structuring element itself.
     int structuringElement[3][3] = {
-        {0, 1, 0},
+        {1, 1, 0},
         {1, 1, 1},
-        {0, 1, 0}
+        {1, 1, 0}
     };
     
     // Create a temporary array to store the result.
@@ -158,8 +158,8 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
 
 
 // Detect cells in the binary image using sliding window approach
-void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {    
-    
+int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {    
+    int cells = 0;
     for (int x = 1; x < BMP_WIDTH - testsize - 1; x++) {
         for (int y = 1; y < BMP_HEIGTH - testsize - 1; y++) {
             
@@ -205,7 +205,14 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
                 
                 // If all pixels in the exclusion frame are black, register a cell detection
                 if (exclusion_frame_clear) {
-                    found_spots[x - 1][y - 1] = 1;  // Adjust for the exclusion frame offset
+                    cells++;
+                    for (int i = 1; i <= testsize; i++) {
+                        for (int j = 1; j <= testsize; j++) {
+                            bmp_image[x + i][y + j][0] = 255;
+                            bmp_image[x + i][y + j][1] = 0;
+                            bmp_image[x + i][y + j][2] = 0;
+                        }
+                    }
                     
                     // Set all pixels inside the capturing area to black to prevent detecting the same cell twice
                     for (int dx = 0; dx < testsize; dx++) {
@@ -219,35 +226,8 @@ void detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char fou
             }
         }
     }
+    return cells;
 }
-
-
-// Function to create the output image with red + signs over each cell.
-void createOutputImage (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize]) {
-
-    // Define the offset from the values in found_spots to the actual positions in the output image.
-    char offset = testsize / 2;
-
-    // Check through all values in found_spots and.
-    for (int x = 0; x < BMP_WIDTH-testsize; x++) {
-        for (int y = 0; y < BMP_HEIGTH-testsize; y++) {
-
-            // Draw the + sign for found spots.
-            if (found_spots[x][y]) {
-                for (int i = -6; i < 6; i++) {
-                    for (int j = -6; j < 6; j++) {
-                        bmp_image[x + offset + i][y + offset + j][0] = 255;
-                        bmp_image[x + offset + i][y + offset + j][1] = 0;
-                        bmp_image[x + offset + i][y + offset + j][2] = 0;
-                    }
-                }
-                
-                printf("Cell written at position (%d, %d)\n", x + offset, y + offset);
-            }
-        }
-    }
-}
-
 
 
 //Declare the array to store the RGB image.
@@ -255,9 +235,6 @@ unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 
 // Declare the array to store the binary images.
 unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH];
-
-// Declare list of found spots
-unsigned char found_spots[BMP_WIDTH-testsize][BMP_HEIGTH-testsize];
 
 // Declare boolean used to check erosion.
 char wasEroded;
@@ -278,13 +255,6 @@ int main(int argc, char** argv) {
 
     printf("Example program - 02132 - A1\n");
     start = clock();
-
-    // Initialize found_spots array to all zeros.
-    for (int x = 0; x < BMP_WIDTH - testsize; x++) {
-        for (int y = 0; y < BMP_HEIGTH - testsize; y++) {
-            found_spots[x][y] = 0;
-        }
-    }
 
     // Load image from file.
     read_bitmap(argv[1], bmp_image);
@@ -309,6 +279,7 @@ int main(int argc, char** argv) {
     // Apply limited erosion and detect cells
     int erosion_iterations = 0;
     int max_erosions = 100; // Limit erosions to prevent removing all pixels
+    int total_cells = 0;
     
     do {
         // Create a copy to check if erosion changed anything
@@ -353,25 +324,13 @@ int main(int argc, char** argv) {
             break;
         }
         
-        detect(binary_image, found_spots);
+        total_cells += detect(binary_image, bmp_image);
         
     } while (wasEroded);
-
-    // Create output image
-    createOutputImage(bmp_image, found_spots);
 
     // Save image to file
     write_bitmap(bmp_image, argv[2]);
 
-    // Count and display total number of cells found
-    int total_cells = 0;
-    for (int x = 0; x < BMP_WIDTH-testsize; x++) {
-        for (int y = 0; y < BMP_HEIGTH-testsize; y++) {
-            if (found_spots[x][y]) {
-                total_cells++;
-            }
-        }
-    }
     printf("Total cells detected: %d\n", total_cells);
 
     end = clock();
