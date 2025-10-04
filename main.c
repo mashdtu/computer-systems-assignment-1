@@ -64,11 +64,10 @@ void saveErosionStepImage(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], int
 }
 
 // Apply the erosion algorithm to the binary image using a structuring element.
-void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
+    char wasEroded = 0;
 
-    // Define a 3x3 structuring element (cross shape for cell detection).
     // 1 means the pixel is part of the structuring element, 0 means it's ignored.
-
     // Define size of structuring element.
     int se_size = 3;
 
@@ -122,9 +121,10 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
                             int entry_x = x + i - 1;
                             int entry_y = y + j - 1;
                             
-                            // If any black pixel is contain on an entry of the structuring element equal to 1, the erosion fails.
+                            // If any black pixel is contain on an entry of the structuring element equal to 1, the erosion happens.
                             if (temp_image[entry_x][entry_y] == 0) {
                                 erosion_result = 0;
+                                wasEroded = 1;
                             }
                         }
                     }
@@ -153,6 +153,7 @@ void erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
             binary_image[BMP_WIDTH - 1 - i][y] = 0;  // Right border
         }
     }
+    return wasEroded;
 }
 
 
@@ -252,8 +253,8 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Usage: %s <output file path> <output file path>\n", argv[0]);
         exit(1);
     }
-
-    printf("Example program - 02132 - A1\n");
+    int totaltime = 0;
+    for (int i = 0; i < 8;i++){
     start = clock();
 
     // Load image from file.
@@ -290,21 +291,13 @@ int main(int argc, char** argv) {
             }
         }
         
-    erode(binary_image, bmp_image);
+    wasEroded = erode(binary_image, bmp_image);
     erosion_iterations++;
 
     // Save snapshot after this erosion iteration
     saveErosionStepImage(binary_image, erosion_iterations);
         
         // Check if erosion actually changed anything
-        wasEroded = 0;
-        for (int x = 0; x < BMP_WIDTH && !wasEroded; x++) {
-            for (int y = 0; y < BMP_HEIGTH && !wasEroded; y++) {
-                if (temp_copy[x][y] != binary_image[x][y]) {
-                    wasEroded = 1;
-                }
-            }
-        }
         
         // Count remaining white pixels
         int white_pixels = 0;
@@ -338,6 +331,11 @@ int main(int argc, char** argv) {
     printf("Done!\n");
     cpu_time_used = end - start;
     printf("Total time: %f ms\n", cpu_time_used * 1000.0 /CLOCKS_PER_SEC);
+    totaltime += cpu_time_used;
 
+
+    }
+    int avgtime = totaltime >>3;
+    printf("Total time: %f ms\n", avgtime * 1000.0 /CLOCKS_PER_SEC);
     return 0;
 }
