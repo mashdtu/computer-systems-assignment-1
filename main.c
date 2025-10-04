@@ -14,23 +14,17 @@
 #define BINARY_COLOUR_THRESHOLD 270
 
 // Get the colour of the RGB image at pixel x, y.
-int getColourIntensity(unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
+char getColourIntensity(unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned int x, unsigned int y) {
     // Return 1 if pixel is white and 0 if the pixel is black.
-    int sum = bmp_image[x][y][0] + bmp_image[x][y][1] + bmp_image[x][y][2];
+    short int sum = bmp_image[x][y][0] + bmp_image[x][y][1] + bmp_image[x][y][2];
     return sum > BINARY_COLOUR_THRESHOLD;
-}
-
-// Switch colour of pixel (x,y) between black and white.
-void switchColour(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned int x, unsigned int y) {
-    // Switch between black and white.
-    binary_image[x][y] = !(binary_image[x][y]);
 }
 
 
 // Write a 2D list binary_image from the RGB bitmap bmp_image.
 void rgbToBinary (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH]) {
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
+    for (short int x = 0; x < BMP_WIDTH; x++) {
+        for (short int y = 0; y < BMP_HEIGTH; y++) {
             if (getColourIntensity(bmp_image, x, y)) {
                 binary_image[x][y] = 1;
             } else {
@@ -40,42 +34,19 @@ void rgbToBinary (unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS], 
     }
 }
 
-
-// Write an RGB bitmap bmp_image from the 2D list binary_image.
-// Note that this image will neccisarily be polarised, any pixel will be either completely black or completely white.
-void binaryToRGB (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
-            for (int c = 0; c < BMP_CHANNELS; c++) {
-                bmp_image[x][y][c] = binary_image[x][y] * 255;
-            }
-        }
-    }
-}
-
-// Save a snapshot of the current binary image as a BMP under results/step_<step>.bmp
-void saveErosionStepImage(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], int step) {
-    static unsigned char tmp[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
-    binaryToRGB(binary_image, tmp);
-    char path[260];
-    snprintf(path, sizeof(path), "results/step_%d.bmp", step);
-    write_bitmap(tmp, path);
-    printf("Saved erosion snapshot: %s\n", path);
-}
-
 // Apply the erosion algorithm to the binary image using a structuring element.
 char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {
     char wasEroded = 0;
 
     // 1 means the pixel is part of the structuring element, 0 means it's ignored.
     // Define size of structuring element.
-    int se_size = 3;
+    char se_size = 3;
 
     // Define center of the structuring element.
-    int se_center = se_size>>1; // Used for making sure the pixel is not at the border. Dividing integers automatically rounds down.
+    char se_center = se_size>>1; // Used for making sure the pixel is not at the border. Dividing integers automatically rounds down.
 
     // Define the structuring element itself.
-    int structuringElement[3][3] = {
+    char structuringElement[3][3] = {
         {1, 1, 0},
         {1, 1, 1},
         {1, 1, 0}
@@ -85,20 +56,20 @@ char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
     unsigned char temp_image[BMP_WIDTH][BMP_HEIGTH];
     
     // Copy the original binary image to the temporary array.
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
+    for (short int x = 0; x < BMP_WIDTH; x++) {
+        for (short int y = 0; y < BMP_HEIGTH; y++) {
             temp_image[x][y] = binary_image[x][y];
         }
     }
 
-    printf("Starting erosion with cross-shaped structuring element...\n");
+    printf("Starting erosion\n");
 
     // Apply the erosion algorithm for non-border pixels
-    for (int x = 1; x < BMP_WIDTH - 1; x++) {
-        for (int y = 1; y < BMP_HEIGTH - 1; y++) {
+    for (short int x = 1; x < BMP_WIDTH - 1; x++) {
+        for (short int y = 1; y < BMP_HEIGTH - 1; y++) {
 
 
-            int erosion_result = 0;
+            unsigned char erosion_result = 0;
             
 
             if (temp_image[x][y]) {
@@ -139,16 +110,16 @@ char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
     // Set border pixels to black to avoid boundary issues.
 
     // Horizontal borders:
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int i = 0; i < se_center; i++) {
+    for (short int x = 0; x < BMP_WIDTH; x++) {
+        for (short int i = 0; i < se_center; i++) {
             binary_image[x][i] = 0;  // Top border
             binary_image[x][BMP_HEIGTH - 1 - i] = 0;  // Bottom border
         }
     }
 
     // Vertical borders:
-    for (int y = 0; y < BMP_HEIGTH; y++) {
-        for (int i = 0; i < se_center; i++) {
+    for (short int y = 0; y < BMP_HEIGTH; y++) {
+        for (short int i = 0; i < se_center; i++) {
             binary_image[i][y] = 0;  // Left border
             binary_image[BMP_WIDTH - 1 - i][y] = 0;  // Right border
         }
@@ -157,15 +128,14 @@ char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
 }
 
 
-
 // Detect cells in the binary image using sliding window approach
-int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {    
-    int cells = 0;
-    for (int x = 1; x < BMP_WIDTH - testsize - 1; x++) {
-        for (int y = 1; y < BMP_HEIGTH - testsize - 1; y++) {
+short int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS]) {    
+    short int cells = 0;
+    for (short int x = 1; x < BMP_WIDTH - testsize - 1; x++) {
+        for (short int y = 1; y < BMP_HEIGTH - testsize - 1; y++) {
             
             // Check if at least one pixel is white in the capturing area (12x12 square)
-            int has_white_pixel = 0;
+            char has_white_pixel = 0;
             for (int dx = 0; dx < testsize; dx++) {
                 for (int dy = 0; dy < testsize; dy++) {
                     if (binary_image[x + dx][y + dy] == 1) {
@@ -180,10 +150,10 @@ int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_
             if (has_white_pixel) {
                 
                 // Check if all pixels in the exclusion frame are black
-                int exclusion_frame_clear = 1;
+                char exclusion_frame_clear = 1;
                 
                 // Check top and bottom rows of exclusion frame
-                for (int dy = -1; dy <= testsize; dy++) {
+                for (char dy = -1; dy <= testsize; dy++) {
                     if (y + dy >= 0 && y + dy < BMP_HEIGTH) {
                         if (binary_image[x - 1][y + dy] == 1 || binary_image[x + testsize][y + dy] == 1) {
                             exclusion_frame_clear = 0;
@@ -194,7 +164,7 @@ int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_
                 
                 // Check left and right columns of exclusion frame (excluding corners already checked)
                 if (exclusion_frame_clear) {
-                    for (int dx = 0; dx < testsize; dx++) {
+                    for (char dx = 0; dx < testsize; dx++) {
                         if (x + dx >= 0 && x + dx < BMP_WIDTH) {
                             if (binary_image[x + dx][y - 1] == 1 || binary_image[x + dx][y + testsize] == 1) {
                                 exclusion_frame_clear = 0;
@@ -207,8 +177,8 @@ int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_
                 // If all pixels in the exclusion frame are black, register a cell detection
                 if (exclusion_frame_clear) {
                     cells++;
-                    for (int i = 1; i <= testsize; i++) {
-                        for (int j = 1; j <= testsize; j++) {
+                    for (char i = 1; i <= testsize; i++) {
+                        for (char j = 1; j <= testsize; j++) {
                             bmp_image[x + i][y + j][0] = 255;
                             bmp_image[x + i][y + j][1] = 0;
                             bmp_image[x + i][y + j][2] = 0;
@@ -216,13 +186,11 @@ int detect(unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp_
                     }
                     
                     // Set all pixels inside the capturing area to black to prevent detecting the same cell twice
-                    for (int dx = 0; dx < testsize; dx++) {
-                        for (int dy = 0; dy < testsize; dy++) {
+                    for (char dx = 0; dx < testsize; dx++) {
+                        for (char dy = 0; dy < testsize; dy++) {
                             binary_image[x + dx][y + dy] = 0;
                         }
                     }
-                    
-                    printf("Cell detected at position (%d, %d)\n", x, y);
                 }
             }
         }
@@ -236,9 +204,6 @@ unsigned char bmp_image[BMP_WIDTH][BMP_HEIGTH][BMP_CHANNELS];
 
 // Declare the array to store the binary images.
 unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH];
-
-// Declare boolean used to check erosion.
-char wasEroded;
 
 // Main function.
 int main(int argc, char** argv) {
@@ -254,7 +219,7 @@ int main(int argc, char** argv) {
         exit(1);
     }
     int totaltime = 0;
-    for (int i = 0; i < 8;i++){
+    for (char i = 0; i < 8;i++){
     start = clock();
 
     // Load image from file.
@@ -262,64 +227,25 @@ int main(int argc, char** argv) {
 
     // Write the binary image.
     rgbToBinary(bmp_image, binary_image);
-
-    // Save the initial binary image as step 0 (before any erosion)
-    saveErosionStepImage(binary_image, 0);
-
-    // Count initial white pixels
-    int initial_white_pixels = 0;
-    for (int x = 0; x < BMP_WIDTH; x++) {
-        for (int y = 0; y < BMP_HEIGTH; y++) {
-            if (binary_image[x][y] == 1) {
-                initial_white_pixels++;
-            }
-        }
-    }
-    printf("Initial white pixels after binary conversion: %d\n", initial_white_pixels);
     
     // Apply limited erosion and detect cells
-    int erosion_iterations = 0;
-    int max_erosions = 100; // Limit erosions to prevent removing all pixels
-    int total_cells = 0;
+    unsigned char erosion_iterations = 0;
+    unsigned char max_erosions = 100; // Limit erosions to prevent removing all pixels
+    short int total_cells = 0;
     
-    do {
-        // Create a copy to check if erosion changed anything
-        unsigned char temp_copy[BMP_WIDTH][BMP_HEIGTH];
-        for (int x = 0; x < BMP_WIDTH; x++) {
-            for (int y = 0; y < BMP_HEIGTH; y++) {
-                temp_copy[x][y] = binary_image[x][y];
-            }
-        }
+    while (erode(binary_image, bmp_image)) {
+        erosion_iterations++;
         
-    wasEroded = erode(binary_image, bmp_image);
-    erosion_iterations++;
-
-    // Save snapshot after this erosion iteration
-    saveErosionStepImage(binary_image, erosion_iterations);
+        printf("Erosion %d done\n", 
+               erosion_iterations);
         
-        // Check if erosion actually changed anything
-        
-        // Count remaining white pixels
-        int white_pixels = 0;
-        for (int x = 0; x < BMP_WIDTH; x++) {
-            for (int y = 0; y < BMP_HEIGTH; y++) {
-                if (binary_image[x][y] == 1) {
-                    white_pixels++;
-                }
-            }
-        }
-        
-        printf("After erosion %d: %d white pixels remaining, wasEroded=%d\n", 
-               erosion_iterations, white_pixels, wasEroded);
-        
-        // Stop if no white pixels remain or max erosions reached
-        if (white_pixels == 0 || erosion_iterations > max_erosions) {
+        // Stop if max erosions reached
+        if (erosion_iterations > max_erosions) {
             break;
         }
         
-        total_cells += detect(binary_image, bmp_image);
-        
-    } while (wasEroded);
+        total_cells += detect(binary_image, bmp_image);  
+    }
 
     // Save image to file
     write_bitmap(bmp_image, argv[2]);
@@ -332,8 +258,6 @@ int main(int argc, char** argv) {
     cpu_time_used = end - start;
     printf("Total time: %f ms\n", cpu_time_used * 1000.0 /CLOCKS_PER_SEC);
     totaltime += cpu_time_used;
-
-
     }
     int avgtime = totaltime >>3;
     printf("Total time: %f ms\n", avgtime * 1000.0 /CLOCKS_PER_SEC);
