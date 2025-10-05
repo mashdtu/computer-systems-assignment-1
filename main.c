@@ -68,20 +68,15 @@ char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
     for (short int x = 1; x < BMP_WIDTH - 1; x++) {
         for (short int y = 1; y < BMP_HEIGTH - 1; y++) {
 
-
-            unsigned char erosion_result = 0;
-            
-
             if (temp_image[x][y]) {
 
                 // Assume erosion passes initially, i.e. that there are no black pixels within the structuring element.
-                erosion_result = 1;
             
                 // Check if the selected pixel should be eroding by comparing the surrounding grid with the structuring element.
                 
                 // Check each position in the structuring element projected on the binary image.
-                for (int i = 0; i < se_size; i++) {
-                    for (int j = 0; j < se_size; j++) {
+                for (char i = 0; i < se_size; i++) {
+                    for (char j = 0; j < se_size; j++) {
 
                         // Only check positions where the structuring element has a 1.
                         if (structuringElement[i][j] == 1) {
@@ -89,12 +84,12 @@ char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
                             
 
                             // Calculate the position of the selected entry of the structuring element relative to the selected pixel.
-                            int entry_x = x + i - 1;
-                            int entry_y = y + j - 1;
+                            short int entry_x = x + i - 1;
+                            short int entry_y = y + j - 1;
                             
                             // If any black pixel is contain on an entry of the structuring element equal to 1, the erosion happens.
                             if (temp_image[entry_x][entry_y] == 0) {
-                                erosion_result = 0;
+                                binary_image[x][y] = 0;
                                 wasEroded = 1;
                             }
                         }
@@ -103,7 +98,6 @@ char erode (unsigned char binary_image[BMP_WIDTH][BMP_HEIGTH], unsigned char bmp
             }
 
             // Set the pixel to the result of the erosion, i.e. if the erosion failed (0), then set the pixel to 0 (black). If it succeeded set it to 1 (white).
-            binary_image[x][y] = erosion_result;
         }
     }
     
