@@ -212,8 +212,7 @@ int main(int argc, char** argv) {
         fprintf(stderr, "Usage: %s <output file path> <output file path>\n", argv[0]);
         exit(1);
     }
-    int totaltime = 0;
-    for (char i = 0; i < 8;i++){
+
     start = clock();
 
     // Load image from file.
@@ -251,9 +250,6 @@ int main(int argc, char** argv) {
     printf("Done!\n");
     cpu_time_used = end - start;
     printf("Total time: %f ms\n", cpu_time_used * 1000.0 /CLOCKS_PER_SEC);
-    totaltime += cpu_time_used;
-    }
-    int avgtime = totaltime >>3;
-    printf("Total time: %f ms\n", avgtime * 1000.0 /CLOCKS_PER_SEC);
+
     return 0;
 }
